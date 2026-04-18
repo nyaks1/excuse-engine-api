@@ -56,3 +56,10 @@ def list_categoris():
         """See what you can get excuses for."""
         
         return {"categories": list(EXCUSES.keys())}
+
+@app.get("/")
+def root():
+    return {
+        "message": "ExcuseEngine API is running",
+        "endpoints": ["/excuse", "/categories", "/docs"]
+    }
