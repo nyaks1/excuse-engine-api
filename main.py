@@ -1,5 +1,12 @@
 from fastapi import FastAPI, Query
+from pydantic import BaseModel
+from typing import Optional
 import random
+
+class ExcuseRequest (BaseModel) :
+       category: str = "work"
+       urgency: int = 1
+       name: Optional[str] = None
 
 app = FastAPI(
     title ="ExcuseEngine API",
@@ -62,4 +69,29 @@ def root():
     return {
         "message": "ExcuseEngine API is running",
         "endpoints": ["/excuse", "/categories", "/docs"]
+    }
+
+@app.post("/excuse")
+def post_excuse(request: ExcuseRequest):
+    """Submit your situation, get your excuse."""
+
+    if request.urgency < 1 or request.urgency > 3:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="Urgency must be between 1 and 3")
+
+    pool = EXCUSES.get(request.category, EXCUSES["work"])
+    excuse = random.choice(pool)
+
+    prefix = {
+        1: "",
+        2: "Look, honestly — ",
+        3: "I swear — "
+    }
+
+    greeting = f"{request.name}, " if request.name else ""
+
+    return {
+        "category": request.category,
+        "urgency": request.urgency,
+        "excuse": f"{greeting}{prefix[request.urgency]}{excuse}"
     }
