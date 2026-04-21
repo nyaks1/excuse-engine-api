@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import random
@@ -37,6 +37,12 @@ EXCUSES = {
     ]
 }
 
+prefix = {
+                1: "",
+                2: "Look, honestly —  ",
+                3: "I swear —"
+        }
+
 @app.get("/excuse")
 def get_excuse (
     category: str =Query(default="work", description= "work | gym | code | family"),
@@ -47,11 +53,11 @@ def get_excuse (
         pool = EXCUSES.get(category, EXCUSES["work"])
         excuse = random.choice(pool)
 
-        prefix = {
-                1: "",
-                2: "Look, honestly —  ",
-                3: "I swear —"
-        }
+        if category not in EXCUSES:
+            raise HTTPException(
+                  status_code = 404,
+                  detail = f"Category {category} not found. Available categories {list(EXCUSES.keys())}"
+            )
 
         return {
                  "category": category,
@@ -81,12 +87,6 @@ def post_excuse(request: ExcuseRequest):
 
     pool = EXCUSES.get(request.category, EXCUSES["work"])
     excuse = random.choice(pool)
-
-    prefix = {
-        1: "",
-        2: "Look, honestly — ",
-        3: "I swear — "
-    }
 
     greeting = f"{request.name}, " if request.name else ""
 
