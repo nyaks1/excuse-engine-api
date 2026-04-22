@@ -50,14 +50,15 @@ def get_excuse (
     ):
         """Returns a random excuse. No questions asked."""
 
-        pool = EXCUSES.get(category, EXCUSES["work"])
-        excuse = random.choice(pool)
-
         if category not in EXCUSES:
             raise HTTPException(
                   status_code = 404,
                   detail = f"Category {category} not found. Available categories {list(EXCUSES.keys())}"
             )
+        
+        pool = EXCUSES.get(category, EXCUSES["work"])
+        excuse = random.choice(pool)
+
 
         return {
                  "category": category,
@@ -65,7 +66,7 @@ def get_excuse (
                  "excuse": f"{prefix[urgency]}{excuse}"
         }
 @app.get("/categories")
-def list_categoris(): 
+def list_categories(): 
         """See what you can get excuses for."""
         
         return {"categories": list(EXCUSES.keys())}
@@ -81,8 +82,13 @@ def root():
 def post_excuse(request: ExcuseRequest):
     """Submit your situation, get your excuse."""
 
+    if request.category not in EXCUSES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Category '{request.category}' not found. Available: {list(EXCUSES.keys())}"
+        )
+
     if request.urgency < 1 or request.urgency > 3:
-        from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Urgency must be between 1 and 3")
 
     pool = EXCUSES.get(request.category, EXCUSES["work"])
