@@ -9,6 +9,20 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi import Depends
+from fastapi.security.api_key import APIKeyHeader
+from fastapi import Security
+
+#Security Setup
+API_KEY = os.getenv("API_KEY")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def verify_api_key(key: str = Security(api_key_header)):
+    if key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Include X-API-Key in your request headers."
+        )
+    return key
 
 # Database Setup 
 
@@ -166,8 +180,8 @@ def post_excuse(request: ExcuseRequest, db: Session = Depends(get_db)):
     }
 
 @app.post("/excuses/add")
-def add_excuse(payload: ExcuseCreate, db: Session = Depends(get_db)):
-    """Add a new excuse to the database."""
+def add_excuse(payload: ExcuseCreate, db: Session = Depends(get_db),  key: str = Depends(verify_api_key)):
+    """Add a new excuse to the database. Requires API key."""
 
     if payload.category not in VALID_CATEGORIES:
         raise HTTPException(
