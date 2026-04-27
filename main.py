@@ -68,6 +68,8 @@ app = FastAPI(
     description="Because accountability is overrated.",
     version="2.0.0"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 VALID_CATEGORIES = ["work", "gym", "code", "family"]
 
@@ -127,7 +129,7 @@ def list_categories():
 @app.get("/excuse")
 @limiter.limit("10/minute")
 def get_excuse(
-    request = Request,
+    request: Request,
     category: str = Query(default="work", description="work | gym | code | family"),
     urgency: int = Query(default=1, ge=1, le=3, description="1=chill, 3=desperate"),
     db: Session = Depends(get_db)
